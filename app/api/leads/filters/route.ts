@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     // Get unique locations (excluding null/empty)
     const locations = await Lead.distinct('location', {
       ...baseFilter,
-      location: { $exists: true, $ne: null, $ne: '' }
+      location: { $exists: true, $nin: [null, ''] }
     });
 
     // Get unique designations
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const sources = role === 'admin' 
       ? await Lead.distinct('source', {
           ...baseFilter,
-          source: { $exists: true, $ne: null, $ne: '' }
+          source: { $exists: true, $nin: [null, ''] }
         })
       : [];
 
