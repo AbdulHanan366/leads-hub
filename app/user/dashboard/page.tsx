@@ -33,17 +33,28 @@ export default function UserDashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       fetchDashboardData();
     }
-  }, [user]);
+  }, [user?.id]);
 
   const fetchDashboardData = async () => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError('');
       
-      const response = await fetch(`/api/leads?userId=${user?.id}&role=${user?.role}&limit=5`);
+      const params = new URLSearchParams({
+        userId: user.id,
+        role: user.role || 'user',
+        limit: '5',
+      });
+
+      const response = await fetch(`/api/leads?${params}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data');

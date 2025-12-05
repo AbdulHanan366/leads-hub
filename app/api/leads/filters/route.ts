@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     // Build base filter for user access
     const baseFilter: any = {};
-    if (role !== 'admin') {
+    if (role !== 'admin' && userId && userId.trim() !== '') {
       baseFilter.assigned_to = userId;
     }
 

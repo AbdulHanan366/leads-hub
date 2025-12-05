@@ -30,16 +30,29 @@ export default function Analytics() {
   const [timeRange, setTimeRange] = useState('30'); // 7, 30, 90, 365
 
   useEffect(() => {
-    fetchAnalytics();
-  }, [timeRange]);
+    if (user?.id) {
+      fetchAnalytics();
+    }
+  }, [timeRange, user?.id]);
 
   const fetchAnalytics = async () => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
 
       // In a real app, you would have an analytics API endpoint
       // For now, we'll fetch leads and calculate analytics on the client
-      const response = await fetch(`/api/leads?userId=${user?.id}&role=${user?.role}&limit=1000`);
+      const params = new URLSearchParams({
+        userId: user.id,
+        role: user.role || 'user',
+        limit: '1000',
+      });
+
+      const response = await fetch(`/api/leads?${params}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch analytics data');

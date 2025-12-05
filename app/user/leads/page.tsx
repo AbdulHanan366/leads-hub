@@ -82,22 +82,29 @@ export default function ViewLeads() {
   }, [searchTerm, companyFilter, locationFilter, designationFilter, sortBy, sortOrder]);
 
   useEffect(() => {
-    fetchLeads();
-  }, [pagination.currentPage, searchTerm, companyFilter, locationFilter, designationFilter, sortBy, sortOrder]);
+    if (user?.id) {
+      fetchLeads();
+    }
+  }, [pagination.currentPage, searchTerm, companyFilter, locationFilter, designationFilter, sortBy, sortOrder, user?.id]);
 
   useEffect(() => {
     fetchFilterOptions();
   }, [user]);
 
   const fetchLeads = async () => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       
       const params = new URLSearchParams({
         page: pagination.currentPage.toString(),
         limit: '10',
-        userId: user?.id || '',
-        role: user?.role || 'user',
+        userId: user.id,
+        role: user.role || 'user',
         ...(searchTerm && { search: searchTerm }),
         ...(companyFilter && { company: companyFilter }),
         ...(locationFilter && { location: locationFilter }),

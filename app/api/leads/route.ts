@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     // Build filter
     const filter: any = {};
 
-    if (role !== 'admin') {
+    if (role !== 'admin' && userId && userId.trim() !== '') {
       filter.assigned_to = userId;
     }
 
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
 
     // Add assignedTo filter (for admin)
     const assignedTo = searchParams.get('assignedTo');
-    if (assignedTo && role === 'admin') {
+    if (assignedTo && assignedTo.trim() !== '' && role === 'admin') {
       filter.assigned_to = assignedTo;
     }
 
