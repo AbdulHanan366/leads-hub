@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { useAuth } from '@/contexts/AuthContext';
-import { useEffect, useState } from 'react';
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
 
 interface Lead {
   _id: string;
@@ -21,6 +21,8 @@ interface Lead {
   source: string;
   notes: string;
   additional_emails: Array<{
+    last_name: string;
+    first_name: string;
     email: string;
     designation: string;
     is_primary: boolean;
@@ -64,16 +66,16 @@ export default function AdminLeads() {
     hasPrev: false,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [companyFilter, setCompanyFilter] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
-  const [designationFilter, setDesignationFilter] = useState('');
-  const [assignedToFilter, setAssignedToFilter] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('');
-  const [dateFromFilter, setDateFromFilter] = useState('');
-  const [dateToFilter, setDateToFilter] = useState('');
-  const [sortBy, setSortBy] = useState('created_at');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [designationFilter, setDesignationFilter] = useState("");
+  const [assignedToFilter, setAssignedToFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [dateFromFilter, setDateFromFilter] = useState("");
+  const [dateToFilter, setDateToFilter] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterOptions, setFilterOptions] = useState<{
     companies: string[];
@@ -89,12 +91,35 @@ export default function AdminLeads() {
 
   // Reset to page 1 when filters change
   useEffect(() => {
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
-  }, [searchTerm, companyFilter, locationFilter, designationFilter, assignedToFilter, sourceFilter, dateFromFilter, dateToFilter, sortBy, sortOrder]);
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+  }, [
+    searchTerm,
+    companyFilter,
+    locationFilter,
+    designationFilter,
+    assignedToFilter,
+    sourceFilter,
+    dateFromFilter,
+    dateToFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   useEffect(() => {
     fetchLeads();
-  }, [pagination.currentPage, searchTerm, companyFilter, locationFilter, designationFilter, assignedToFilter, sourceFilter, dateFromFilter, dateToFilter, sortBy, sortOrder]);
+  }, [
+    pagination.currentPage,
+    searchTerm,
+    companyFilter,
+    locationFilter,
+    designationFilter,
+    assignedToFilter,
+    sourceFilter,
+    dateFromFilter,
+    dateToFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   useEffect(() => {
     fetchUsers();
@@ -104,11 +129,11 @@ export default function AdminLeads() {
   const fetchLeads = async () => {
     try {
       setIsLoading(true);
-      
+
       const params = new URLSearchParams({
         page: pagination.currentPage.toString(),
-        limit: '20',
-        role: 'admin',
+        limit: "20",
+        role: "admin",
         ...(searchTerm && { search: searchTerm }),
         ...(companyFilter && { company: companyFilter }),
         ...(locationFilter && { location: locationFilter }),
@@ -122,16 +147,16 @@ export default function AdminLeads() {
       });
 
       const response = await fetch(`/api/leads?${params}`);
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch leads');
+        throw new Error("Failed to fetch leads");
       }
-      
+
       const data = await response.json();
       setLeads(data.leads);
       setPagination(data.pagination);
     } catch (error) {
-      console.error('Error fetching leads:', error);
+      console.error("Error fetching leads:", error);
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +164,7 @@ export default function AdminLeads() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users?limit=1000');
+      const response = await fetch("/api/admin/users?limit=1000");
       if (response.ok) {
         const data = await response.json();
         // Map users to ensure _id is converted to id
@@ -151,102 +176,128 @@ export default function AdminLeads() {
         setUsers(mappedUsers);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
     }
   };
 
   const fetchFilterOptions = async () => {
     try {
       if (!user?.id) return;
-      
+
       const params = new URLSearchParams({
         userId: user.id,
-        role: user.role || 'admin',
+        role: user.role || "admin",
       });
 
       const response = await fetch(`/api/leads/filters?${params}`);
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch filter options');
+        throw new Error("Failed to fetch filter options");
       }
-      
+
       const data = await response.json();
       setFilterOptions(data);
     } catch (error) {
-      console.error('Error fetching filter options:', error);
+      console.error("Error fetching filter options:", error);
     }
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
   };
 
   const handlePageChange = (newPage: number) => {
-    setPagination(prev => ({ ...prev, currentPage: newPage }));
+    setPagination((prev) => ({ ...prev, currentPage: newPage }));
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setCompanyFilter('');
-    setLocationFilter('');
-    setDesignationFilter('');
-    setAssignedToFilter('');
-    setSourceFilter('');
-    setDateFromFilter('');
-    setDateToFilter('');
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    setSearchTerm("");
+    setCompanyFilter("");
+    setLocationFilter("");
+    setDesignationFilter("");
+    setAssignedToFilter("");
+    setSourceFilter("");
+    setDateFromFilter("");
+    setDateToFilter("");
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
   };
 
   const exportToCSV = () => {
     const headers = [
-      'First Name',
-      'Last Name',
-      'Email',
-      'Designation',
-      'Company',
-      'Location',
-      'Mobile',
-      'Source',
-      'Assigned To',
-      'Created Date'
+      "First Name",
+      "Last Name",
+      "Email",
+      "Email Type",
+      "Designation",
+      "Company",
+      "Location",
+      "Mobile",
+      "Source",
+      "Assigned To",
+      "Created Date",
     ];
 
-    const csvData = leads.map(lead => [
-      lead.first_name,
-      lead.last_name,
-      lead.email,
-      lead.designation,
-      lead.company_name,
-      lead.location || '',
-      lead.person_mobile || '',
-      lead.source || '',
-      lead.assigned_to.name,
-      formatDate(lead.created_at)
-    ]);
+    const csvData: string[][] = [];
+
+    leads.forEach((lead) => {
+      csvData.push([
+        lead.first_name,
+        lead.last_name,
+        lead.email,
+        "Primary",
+        lead.designation,
+        lead.company_name,
+        lead.location || "",
+        lead.person_mobile || "",
+        lead.source || "",
+        lead.assigned_to.name,
+        formatDate(lead.created_at),
+      ]);
+
+      // Add additional email rows
+      if (lead.additional_emails && lead.additional_emails.length > 0) {
+        lead.additional_emails.forEach((additionalEmail) => {
+          csvData.push([
+            additionalEmail.first_name,
+            additionalEmail.last_name,
+            additionalEmail.email,
+            additionalEmail.is_primary ? "Primary (Additional)" : "Additional",
+            additionalEmail.designation || "",
+            lead.company_name,
+            lead.location || "",
+            lead.person_mobile || "",
+            lead.source || "",
+            lead.assigned_to.name,
+            formatDate(lead.created_at),
+          ]);
+        });
+      }
+    });
 
     const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.map(field => `"${field}"`).join(','))
-    ].join('\n');
+      headers.join(","),
+      ...csvData.map((row) =>
+        row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `leads-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `leads-export-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
-
 
   return (
     <ProtectedRoute requiredRole="admin">
@@ -267,8 +318,18 @@ export default function AdminLeads() {
                 onClick={exportToCSV}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
                 <span>Export CSV</span>
               </button>
@@ -292,8 +353,18 @@ export default function AdminLeads() {
                     type="submit"
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -305,8 +376,10 @@ export default function AdminLeads() {
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
               >
                 <option value="">All Companies</option>
-                {filterOptions.companies.map(company => (
-                  <option key={company} value={company}>{company}</option>
+                {filterOptions.companies.map((company) => (
+                  <option key={company} value={company}>
+                    {company}
+                  </option>
                 ))}
               </select>
 
@@ -316,8 +389,10 @@ export default function AdminLeads() {
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
               >
                 <option value="">All Locations</option>
-                {filterOptions.locations.map(location => (
-                  <option key={location} value={location}>{location}</option>
+                {filterOptions.locations.map((location) => (
+                  <option key={location} value={location}>
+                    {location}
+                  </option>
                 ))}
               </select>
             </div>
@@ -329,8 +404,20 @@ export default function AdminLeads() {
                 className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 flex items-center space-x-1"
               >
                 <span>Advanced Filters</span>
-                <svg className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <svg
+                  className={`w-4 h-4 transition-transform ${
+                    showAdvancedFilters ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
 
@@ -376,8 +463,10 @@ export default function AdminLeads() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="">All Designations</option>
-                    {filterOptions.designations.map(designation => (
-                      <option key={designation} value={designation}>{designation}</option>
+                    {filterOptions.designations.map((designation) => (
+                      <option key={designation} value={designation}>
+                        {designation}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -392,8 +481,10 @@ export default function AdminLeads() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="">All Users</option>
-                    {users.map(user => (
-                      <option key={user.id} value={user.id}>{user.name}</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -408,8 +499,10 @@ export default function AdminLeads() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="">All Sources</option>
-                    {filterOptions.sources.map(source => (
-                      <option key={source} value={source}>{source}</option>
+                    {filterOptions.sources.map((source) => (
+                      <option key={source} value={source}>
+                        {source}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -447,7 +540,9 @@ export default function AdminLeads() {
             {isLoading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">Loading leads...</p>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                  Loading leads...
+                </p>
               </div>
             ) : (
               <>
@@ -474,7 +569,10 @@ export default function AdminLeads() {
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                       {leads.map((lead) => (
-                        <tr key={lead._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <tr
+                          key={lead._id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
                               <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -512,7 +610,7 @@ export default function AdminLeads() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {lead.location || 'N/A'}
+                            {lead.location || "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                             {formatDate(lead.created_at)}
@@ -526,15 +624,29 @@ export default function AdminLeads() {
                 {/* Empty State */}
                 {leads.length === 0 && !isLoading && (
                   <div className="text-center py-8">
-                    <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <svg
+                      className="w-12 h-12 mx-auto text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
                     </svg>
-                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No leads found</h3>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                      No leads found
+                    </h3>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      {searchTerm || companyFilter || locationFilter || designationFilter 
-                        ? 'Try adjusting your search or filters' 
-                        : 'No leads have been created yet'
-                      }
+                      {searchTerm ||
+                      companyFilter ||
+                      locationFilter ||
+                      designationFilter
+                        ? "Try adjusting your search or filters"
+                        : "No leads have been created yet"}
                     </p>
                   </div>
                 )}
@@ -548,17 +660,22 @@ export default function AdminLeads() {
                       </div>
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => handlePageChange(pagination.currentPage - 1)}
+                          onClick={() =>
+                            handlePageChange(pagination.currentPage - 1)
+                          }
                           disabled={!pagination.hasPrev}
                           className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
                           Previous
                         </button>
                         <span className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
-                          Page {pagination.currentPage} of {pagination.totalPages}
+                          Page {pagination.currentPage} of{" "}
+                          {pagination.totalPages}
                         </span>
                         <button
-                          onClick={() => handlePageChange(pagination.currentPage + 1)}
+                          onClick={() =>
+                            handlePageChange(pagination.currentPage + 1)
+                          }
                           disabled={!pagination.hasNext}
                           className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
