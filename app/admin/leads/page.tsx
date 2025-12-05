@@ -142,7 +142,13 @@ export default function AdminLeads() {
       const response = await fetch('/api/admin/users?limit=1000');
       if (response.ok) {
         const data = await response.json();
-        setUsers(data.users || []);
+        // Map users to ensure _id is converted to id
+        const mappedUsers = (data.users || []).map((user: any) => ({
+          id: user._id?.toString() || user.id,
+          name: user.name,
+          email: user.email,
+        }));
+        setUsers(mappedUsers);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
