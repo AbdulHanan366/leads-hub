@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from "react";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AdditionalEmail {
   first_name: string;
@@ -17,24 +17,26 @@ interface AdditionalEmail {
 export default function CreateLead() {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    designation: '',
-    profile_link: '',
-    email: '',
-    person_mobile: '',
-    location: '',
-    city: '',
-    country: '',
-    company_name: '',
-    company_link: '',
-    job_title: '',
-    job_link: '',
-    source: '',
-    notes: '',
+    first_name: "",
+    last_name: "",
+    designation: "",
+    profile_link: "",
+    email: "",
+    person_mobile: "",
+    location: "",
+    city: "",
+    country: "",
+    company_name: "",
+    company_link: "",
+    job_title: "",
+    job_link: "",
+    source: "",
+    notes: "",
   });
 
-  const [additionalEmails, setAdditionalEmails] = useState<AdditionalEmail[]>([]);
+  const [additionalEmails, setAdditionalEmails] = useState<AdditionalEmail[]>(
+    []
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -43,7 +45,7 @@ export default function CreateLead() {
   const [countries, setCountries] = useState<string[]>([]);
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [showAddCountryModal, setShowAddCountryModal] = useState(false);
-  const [newCountryName, setNewCountryName] = useState('');
+  const [newCountryName, setNewCountryName] = useState("");
   const [addingCountry, setAddingCountry] = useState(false);
 
   useEffect(() => {
@@ -54,34 +56,34 @@ export default function CreateLead() {
   const fetchCountries = async () => {
     try {
       setLoadingCountries(true);
-      const response = await fetch('/api/countries');
+      const response = await fetch("/api/countries");
       if (response.ok) {
         const data = await response.json();
         const countryNames = data.countries.map((c: any) => c.name).sort();
         setCountries(countryNames);
       }
     } catch (error) {
-      console.error('Error fetching countries:', error);
+      console.error("Error fetching countries:", error);
     } finally {
       setLoadingCountries(false);
     }
   };
 
   const initializeDefaultCountries = async () => {
-    const defaultCountries = ['US', 'Canada', 'UK', 'Australia'];
+    const defaultCountries = ["US", "Canada", "UK", "Australia"];
     try {
       for (const countryName of defaultCountries) {
-        const response = await fetch('/api/countries', {
-          method: 'POST',
+        const response = await fetch("/api/countries", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ name: countryName }),
         });
       }
       fetchCountries();
     } catch (error) {
-      console.error('Error initializing default countries:', error);
+      console.error("Error initializing default countries:", error);
     }
   };
 
@@ -92,26 +94,26 @@ export default function CreateLead() {
 
     try {
       setAddingCountry(true);
-      const response = await fetch('/api/countries', {
-        method: 'POST',
+      const response = await fetch("/api/countries", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ name: newCountryName.trim() }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add country');
+        throw new Error(errorData.error || "Failed to add country");
       }
 
       const data = await response.json();
-      setCountries(prev => [...prev, data.country.name].sort());
-      setFormData(prev => ({ ...prev, country: data.country.name }));
-      setNewCountryName('');
+      setCountries((prev) => [...prev, data.country.name].sort());
+      setFormData((prev) => ({ ...prev, country: data.country.name }));
+      setNewCountryName("");
       setShowAddCountryModal(false);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to add country');
+      alert(error instanceof Error ? error.message : "Failed to add country");
     } finally {
       setAddingCountry(false);
     }
@@ -121,40 +123,40 @@ export default function CreateLead() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.first_name.trim()) {
-      newErrors.first_name = 'First name is required';
+      newErrors.first_name = "First name is required";
     }
 
     if (!formData.last_name.trim()) {
-      newErrors.last_name = 'Last name is required';
+      newErrors.last_name = "Last name is required";
     }
 
     if (!formData.designation.trim()) {
-      newErrors.designation = 'Designation is required';
+      newErrors.designation = "Designation is required";
     }
 
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = "Email is invalid";
     }
 
     if (!formData.company_name.trim()) {
-      newErrors.company_name = 'Company name is required';
+      newErrors.company_name = "Company name is required";
     }
 
     // Validate additional emails
     additionalEmails.forEach((email, index) => {
       if (!email.first_name.trim()) {
-        newErrors[`additional_first_name_${index}`] = 'First name is required';
+        newErrors[`additional_first_name_${index}`] = "First name is required";
       }
       if (!email.last_name.trim()) {
-        newErrors[`additional_last_name_${index}`] = 'Last name is required';
+        newErrors[`additional_last_name_${index}`] = "Last name is required";
       }
       if (email.email && !/\S+@\S+\.\S+/.test(email.email)) {
-        newErrors[`additional_email_${index}`] = 'Email is invalid';
+        newErrors[`additional_email_${index}`] = "Email is invalid";
       }
       if (!email.email.trim()) {
-        newErrors[`additional_email_${index}`] = 'Email is required';
+        newErrors[`additional_email_${index}`] = "Email is required";
       }
     });
 
@@ -179,14 +181,14 @@ export default function CreateLead() {
       if (formData.country.trim()) {
         locationParts.push(formData.country.trim());
       }
-      const combinedLocation = locationParts.join(', ');
+      const combinedLocation = locationParts.join(", ");
 
       const { city, country, ...formDataWithoutCityCountry } = formData;
 
-      const response = await fetch('/api/leads', {
-        method: 'POST',
+      const response = await fetch("/api/leads", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ...formDataWithoutCityCountry,
@@ -199,42 +201,44 @@ export default function CreateLead() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create lead');
+        throw new Error(errorData.error || "Failed to create lead");
       }
 
       setSuccess(true);
       // Reset form
       setFormData({
-        first_name: '',
-        last_name: '',
-        designation: '',
-        profile_link: '',
-        email: '',
-        person_mobile: '',
-        location: '',
-        city: '',
-        country: '',
-        company_name: '',
-        company_link: '',
-        job_title: '',
-        job_link: '',
-        source: '',
-        notes: '',
+        first_name: "",
+        last_name: "",
+        designation: "",
+        profile_link: "",
+        email: "",
+        person_mobile: "",
+        location: "",
+        city: "",
+        country: "",
+        company_name: "",
+        company_link: "",
+        job_title: "",
+        job_link: "",
+        source: "",
+        notes: "",
       });
       setAdditionalEmails([]);
 
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
-      setErrors({ submit: error instanceof Error ? error.message : 'Failed to create lead' });
+      setErrors({
+        submit:
+          error instanceof Error ? error.message : "Failed to create lead",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCompanyCheckSubmit = async () => {
-
     if (!formData.company_name.trim()) {
-      setErrors({ company_name: 'Company name is required' });
+      setErrors({ company_name: "Company name is required" });
       return;
     }
 
@@ -248,7 +252,7 @@ export default function CreateLead() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to check company');
+        throw new Error(errorData.error || "Failed to check company");
       }
 
       const data = await response.json();
@@ -256,7 +260,7 @@ export default function CreateLead() {
       if (data.exists && data.company) {
         setFormData((prev) => ({
           ...prev,
-          company_link: data.company.company_link || ''
+          company_link: data.company.company_link || "",
         }));
 
         setCompanyExists(true);
@@ -265,50 +269,63 @@ export default function CreateLead() {
       }
     } catch (error) {
       setCompanyExists(false);
-      console.error('Error checking company:', error);
-      setErrors({ submit: error instanceof Error ? error.message : 'Failed to check company' });
+      console.error("Error checking company:", error);
+      setErrors({
+        submit:
+          error instanceof Error ? error.message : "Failed to check company",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
 
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
 
   const addAdditionalEmail = () => {
-    setAdditionalEmails(prev => [
+    setAdditionalEmails((prev) => [
       ...prev,
       {
-        first_name: '',
-        last_name: '',
-        email: '',
-        designation: '',
-        profile_link: '',
-        is_primary: false
-      }
+        first_name: "",
+        last_name: "",
+        email: "",
+        designation: "",
+        profile_link: "",
+        is_primary: false,
+      },
     ]);
   };
 
   const removeAdditionalEmail = (index: number) => {
-    setAdditionalEmails(prev => prev.filter((_, i) => i !== index));
+    setAdditionalEmails((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateAdditionalEmail = (index: number, field: keyof AdditionalEmail, value: string | boolean) => {
-    setAdditionalEmails(prev => prev.map((email, i) =>
-      i === index ? { ...email, [field]: value } : email
-    ));
+  const updateAdditionalEmail = (
+    index: number,
+    field: keyof AdditionalEmail,
+    value: string | boolean
+  ) => {
+    setAdditionalEmails((prev) =>
+      prev.map((email, i) =>
+        i === index ? { ...email, [field]: value } : email
+      )
+    );
   };
 
   return (
@@ -327,10 +344,20 @@ export default function CreateLead() {
           {success && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
               <div className="flex items-center">
-                <svg className="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 text-green-400 mr-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
-                <span className="text-green-800 dark:text-green-200">Lead created successfully!</span>
+                <span className="text-green-800 dark:text-green-200">
+                  Lead created successfully!
+                </span>
               </div>
             </div>
           )}
@@ -349,7 +376,7 @@ export default function CreateLead() {
                     disabled={isSubmitting || !formData.company_name.trim()}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                   >
-                    {isSubmitting ? 'Checking...' : 'Check Company'}
+                    {isSubmitting ? "Checking..." : "Check Company"}
                   </button>
                 </div>
 
@@ -363,12 +390,17 @@ export default function CreateLead() {
                       name="company_name"
                       value={formData.company_name}
                       onChange={handleChange}
-                      className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.company_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}
+                      className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                        errors.company_name
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      }`}
                       placeholder="Enter company name"
                     />
                     {errors.company_name && (
-                      <p className="mt-1 text-sm text-red-600">{errors.company_name}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.company_name}
+                      </p>
                     )}
                   </div>
 
@@ -392,8 +424,16 @@ export default function CreateLead() {
                   {companyExists === true && (
                     <div className="md:col-span-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                       <div className="flex items-center">
-                        <svg className="w-5 h-5 text-yellow-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11a.75.75 0 00-1.5 0v3.5a.75.75 0 001.5 0V7zm0 6a.75.75 0 00-1.5 0v.008a.75.75 0 001.5 0V13z" clipRule="evenodd" />
+                        <svg
+                          className="w-5 h-5 text-yellow-400 mr-2"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11a.75.75 0 00-1.5 0v3.5a.75.75 0 001.5 0V7zm0 6a.75.75 0 00-1.5 0v.008a.75.75 0 001.5 0V13z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                         <span className="text-yellow-800 dark:text-yellow-200">
                           Company already exists.
@@ -404,11 +444,20 @@ export default function CreateLead() {
                   {companyExists === false && (
                     <div className="md:col-span-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                       <div className="flex items-center">
-                        <svg className="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="w-5 h-5 text-green-400 mr-2"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                         <span className="text-green-800 dark:text-green-200">
-                          Company not found. You can proceed to add a new company.
+                          Company not found. You can proceed to add a new
+                          company.
                         </span>
                       </div>
                     </div>
@@ -421,7 +470,7 @@ export default function CreateLead() {
                   Contact Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       First Name *
                     </label>
@@ -430,12 +479,17 @@ export default function CreateLead() {
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleChange}
-                      className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.first_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}
+                      className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                        errors.first_name
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      }`}
                       placeholder="Enter first name"
                     />
                     {errors.first_name && (
-                      <p className="mt-1 text-sm text-red-600">{errors.first_name}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.first_name}
+                      </p>
                     )}
                   </div>
 
@@ -448,12 +502,17 @@ export default function CreateLead() {
                       name="last_name"
                       value={formData.last_name}
                       onChange={handleChange}
-                      className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.last_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}
+                      className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                        errors.last_name
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      }`}
                       placeholder="Enter last name"
                     />
                     {errors.last_name && (
-                      <p className="mt-1 text-sm text-red-600">{errors.last_name}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.last_name}
+                      </p>
                     )}
                   </div>
 
@@ -466,12 +525,17 @@ export default function CreateLead() {
                       name="designation"
                       value={formData.designation}
                       onChange={handleChange}
-                      className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.designation ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}
+                      className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                        errors.designation
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      }`}
                       placeholder="e.g., CEO, Manager, etc."
                     />
                     {errors.designation && (
-                      <p className="mt-1 text-sm text-red-600">{errors.designation}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.designation}
+                      </p>
                     )}
                   </div>
 
@@ -488,7 +552,7 @@ export default function CreateLead() {
                       placeholder="https://linkedin.com/in/username"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Primary Email *
@@ -498,12 +562,17 @@ export default function CreateLead() {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}
+                      className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                        errors.email
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      }`}
                       placeholder="primary@company.com"
                     />
                     {errors.email && (
-                      <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.email}
+                      </p>
                     )}
                   </div>
 
@@ -537,7 +606,10 @@ export default function CreateLead() {
                   </div>
 
                   {additionalEmails.map((email, index) => (
-                    <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-4">
+                    <div
+                      key={index}
+                      className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-4"
+                    >
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -546,7 +618,13 @@ export default function CreateLead() {
                           <input
                             type="text"
                             value={email.first_name}
-                            onChange={(e) => updateAdditionalEmail(index, 'first_name', e.target.value)}
+                            onChange={(e) =>
+                              updateAdditionalEmail(
+                                index,
+                                "first_name",
+                                e.target.value
+                              )
+                            }
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                             placeholder="Enter first name"
                             required
@@ -559,7 +637,13 @@ export default function CreateLead() {
                           <input
                             type="text"
                             value={email.last_name}
-                            onChange={(e) => updateAdditionalEmail(index, 'last_name', e.target.value)}
+                            onChange={(e) =>
+                              updateAdditionalEmail(
+                                index,
+                                "last_name",
+                                e.target.value
+                              )
+                            }
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                             placeholder="Enter last name"
                             required
@@ -575,14 +659,25 @@ export default function CreateLead() {
                           <input
                             type="email"
                             value={email.email}
-                            onChange={(e) => updateAdditionalEmail(index, 'email', e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors[`additional_email_${index}`] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                              }`}
+                            onChange={(e) =>
+                              updateAdditionalEmail(
+                                index,
+                                "email",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                              errors[`additional_email_${index}`]
+                                ? "border-red-500"
+                                : "border-gray-300 dark:border-gray-600"
+                            }`}
                             placeholder="additional@company.com"
                             required
                           />
                           {errors[`additional_email_${index}`] && (
-                            <p className="mt-1 text-sm text-red-600">{errors[`additional_email_${index}`]}</p>
+                            <p className="mt-1 text-sm text-red-600">
+                              {errors[`additional_email_${index}`]}
+                            </p>
                           )}
                         </div>
                         <div>
@@ -592,7 +687,13 @@ export default function CreateLead() {
                           <input
                             type="text"
                             value={email.designation}
-                            onChange={(e) => updateAdditionalEmail(index, 'designation', e.target.value)}
+                            onChange={(e) =>
+                              updateAdditionalEmail(
+                                index,
+                                "designation",
+                                e.target.value
+                              )
+                            }
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                             placeholder="Alternative designation"
                           />
@@ -607,7 +708,13 @@ export default function CreateLead() {
                           <input
                             type="url"
                             value={email.profile_link}
-                            onChange={(e) => updateAdditionalEmail(index, 'profile_link', e.target.value)}
+                            onChange={(e) =>
+                              updateAdditionalEmail(
+                                index,
+                                "profile_link",
+                                e.target.value
+                              )
+                            }
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                             placeholder="https://linkedin.com/in/username"
                           />
@@ -617,7 +724,13 @@ export default function CreateLead() {
                             <input
                               type="checkbox"
                               checked={email.is_primary}
-                              onChange={(e) => updateAdditionalEmail(index, 'is_primary', e.target.checked)}
+                              onChange={(e) =>
+                                updateAdditionalEmail(
+                                  index,
+                                  "is_primary",
+                                  e.target.checked
+                                )
+                              }
                               className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                             />
                             <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">
@@ -753,10 +866,20 @@ export default function CreateLead() {
               {errors.submit && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                   <div className="flex items-center">
-                    <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    <svg
+                      className="w-5 h-5 text-red-400 mr-2"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
                     </svg>
-                    <span className="text-red-800 dark:text-red-200">{errors.submit}</span>
+                    <span className="text-red-800 dark:text-red-200">
+                      {errors.submit}
+                    </span>
                   </div>
                 </div>
               )}
@@ -773,7 +896,7 @@ export default function CreateLead() {
                   disabled={isSubmitting}
                   className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isSubmitting ? 'Creating Lead...' : 'Create Lead'}
+                  {isSubmitting ? "Creating Lead..." : "Create Lead"}
                 </button>
               </div>
             </form>
@@ -795,7 +918,7 @@ export default function CreateLead() {
                   value={newCountryName}
                   onChange={(e) => setNewCountryName(e.target.value)}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       handleAddCountry();
                     }
                   }}
@@ -809,7 +932,7 @@ export default function CreateLead() {
                   type="button"
                   onClick={() => {
                     setShowAddCountryModal(false);
-                    setNewCountryName('');
+                    setNewCountryName("");
                   }}
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
@@ -821,7 +944,7 @@ export default function CreateLead() {
                   disabled={addingCountry || !newCountryName.trim()}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {addingCountry ? 'Adding...' : 'Add Country'}
+                  {addingCountry ? "Adding..." : "Add Country"}
                 </button>
               </div>
             </div>
