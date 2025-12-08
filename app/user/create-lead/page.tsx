@@ -47,6 +47,9 @@ export default function CreateLead() {
   const [showAddCountryModal, setShowAddCountryModal] = useState(false);
   const [newCountryName, setNewCountryName] = useState("");
   const [addingCountry, setAddingCountry] = useState(false);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [companyLeads, setCompanyLeads] = useState<any[]>([]);
+  const [companyInfo, setCompanyInfo] = useState<any>(null);
 
   useEffect(() => {
     fetchCountries();
@@ -243,7 +246,7 @@ export default function CreateLead() {
     }
 
     try {
-      setIsSubmitting(true);
+      setCompanyCheckLoading(true);
       const response = await fetch(
         `/api/leads/company?company_name=${encodeURIComponent(
           formData.company_name.trim()
@@ -264,8 +267,13 @@ export default function CreateLead() {
         }));
 
         setCompanyExists(true);
+        setCompanyInfo(data.company);
+        setCompanyLeads(data.leads || []);
+        setShowCompanyModal(true);
       } else {
         setCompanyExists(false);
+        setCompanyInfo(null);
+        setCompanyLeads([]);
       }
     } catch (error) {
       setCompanyExists(false);
@@ -275,7 +283,7 @@ export default function CreateLead() {
           error instanceof Error ? error.message : "Failed to check company",
       });
     } finally {
-      setIsSubmitting(false);
+      setCompanyCheckLoading(false);
     }
   };
 
@@ -373,10 +381,10 @@ export default function CreateLead() {
                   <button
                     type="button"
                     onClick={handleCompanyCheckSubmit}
-                    disabled={isSubmitting || !formData.company_name.trim()}
+                    disabled={companyCheckLoading || !formData.company_name.trim()}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                   >
-                    {isSubmitting ? "Checking..." : "Check Company"}
+                    {companyCheckLoading ? "Checking..." : "Check Company"}
                   </button>
                 </div>
 
@@ -421,26 +429,6 @@ export default function CreateLead() {
                     </p>
                   </div>
 
-                  {companyExists === true && (
-                    <div className="md:col-span-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <svg
-                          className="w-5 h-5 text-yellow-400 mr-2"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11a.75.75 0 00-1.5 0v3.5a.75.75 0 001.5 0V7zm0 6a.75.75 0 00-1.5 0v.008a.75.75 0 001.5 0V13z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span className="text-yellow-800 dark:text-yellow-200">
-                          Company already exists.
-                        </span>
-                      </div>
-                    </div>
-                  )}
                   {companyExists === false && (
                     <div className="md:col-span-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                       <div className="flex items-center">
@@ -654,6 +642,45 @@ export default function CreateLead() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Designation
+                          </label>
+                          <input
+                            type="text"
+                            value={email.designation}
+                            onChange={(e) =>
+                              updateAdditionalEmail(
+                                index,
+                                "designation",
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="Alternative designation"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Profile Link
+                          </label>
+                          <input
+                            type="url"
+                            value={email.profile_link}
+                            onChange={(e) =>
+                              updateAdditionalEmail(
+                                index,
+                                "profile_link",
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="https://linkedin.com/in/username"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Email *
                           </label>
                           <input
@@ -679,45 +706,6 @@ export default function CreateLead() {
                               {errors[`additional_email_${index}`]}
                             </p>
                           )}
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Designation
-                          </label>
-                          <input
-                            type="text"
-                            value={email.designation}
-                            onChange={(e) =>
-                              updateAdditionalEmail(
-                                index,
-                                "designation",
-                                e.target.value
-                              )
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                            placeholder="Alternative designation"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Profile Link
-                          </label>
-                          <input
-                            type="url"
-                            value={email.profile_link}
-                            onChange={(e) =>
-                              updateAdditionalEmail(
-                                index,
-                                "profile_link",
-                                e.target.value
-                              )
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                            placeholder="https://linkedin.com/in/username"
-                          />
                         </div>
                         <div className="flex items-end space-x-4">
                           <div className="flex items-center">
@@ -945,6 +933,177 @@ export default function CreateLead() {
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {addingCountry ? "Adding..." : "Add Country"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Company Leads Modal */}
+        {showCompanyModal && companyInfo && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      Company Found: {companyInfo.company_name}
+                    </h3>
+                    {companyInfo.company_link && (
+                      <a
+                        href={companyInfo.company_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 block"
+                      >
+                        {companyInfo.company_link}
+                      </a>
+                    )}
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                      {companyLeads.length} lead{companyLeads.length !== 1 ? 's' : ''} found for this company
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowCompanyModal(false)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6">
+                {companyLeads.length > 0 ? (
+                  <div className="space-y-4">
+                    {companyLeads.map((lead: any) => (
+                      <div
+                        key={lead._id}
+                        className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <div className="space-y-4">
+                          {/* Contact Information */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {lead.first_name} {lead.last_name}
+                              </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {lead.email}
+                              </div>
+                              {lead.designation && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                  <span className="font-medium">Designation:</span> {lead.designation}
+                                </div>
+                              )}
+                              {lead.profile_link && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                  <a
+                                    href={lead.profile_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                                  >
+                                    View Profile
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              {lead.location && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  <span className="font-medium">Location:</span> {lead.location}
+                                </div>
+                              )}
+                              {lead.person_mobile && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                  <span className="font-medium">Mobile:</span> {lead.person_mobile}
+                                </div>
+                              )}
+                              <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                <span className="font-medium">Created:</span>{" "}
+                                {new Date(lead.created_at).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </div>
+                              {lead.assigned_to && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                  <span className="font-medium">Assigned to:</span> {lead.assigned_to.name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Job Information */}
+                          {(lead.job_title || lead.job_link) && (
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                Job Information
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {lead.job_title && (
+                                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    <span className="font-medium">Job Title:</span> {lead.job_title}
+                                  </div>
+                                )}
+                                {lead.job_link && (
+                                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    <span className="font-medium">Job Link:</span>{" "}
+                                    <a
+                                      href={lead.job_link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 dark:text-blue-400 hover:underline break-all"
+                                    >
+                                      {lead.job_link}
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Additional Information */}
+                          {(lead.source || lead.notes) && (
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                Additional Information
+                              </h4>
+                              {lead.source && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                  <span className="font-medium">Source:</span> {lead.source}
+                                </div>
+                              )}
+                              {lead.notes && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  <span className="font-medium">Notes:</span>
+                                  <p className="mt-1 whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                                    {lead.notes}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    No leads found for this company
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                <button
+                  onClick={() => setShowCompanyModal(false)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Close
                 </button>
               </div>
             </div>
