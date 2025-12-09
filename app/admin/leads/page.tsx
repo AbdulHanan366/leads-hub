@@ -88,6 +88,8 @@ export default function AdminLeads() {
     designations: [],
     sources: [],
   });
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingLead, setViewingLead] = useState<Lead | null>(null);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -229,6 +231,16 @@ export default function AdminLeads() {
     setDateFromFilter("");
     setDateToFilter("");
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
+  };
+
+  const openViewModal = (lead: Lead) => {
+    setViewingLead(lead);
+    setShowViewModal(true);
+  };
+
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingLead(null);
   };
 
   const exportToCSV = () => {
@@ -565,6 +577,9 @@ export default function AdminLeads() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           Created
                         </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
@@ -614,6 +629,14 @@ export default function AdminLeads() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                             {formatDate(lead.created_at)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => openViewModal(lead)}
+                              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors"
+                            >
+                              View
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -688,6 +711,172 @@ export default function AdminLeads() {
               </>
             )}
           </div>
+
+          {/* View Lead Modal */}
+          {showViewModal && viewingLead && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Lead Details
+                    </h3>
+                    <button
+                      onClick={closeViewModal}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Personal Information */}
+                    <div>
+                      <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Personal Information</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.first_name}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.last_name}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designation</label>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.designation}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.location || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contact Information */}
+                    <div>
+                      <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Contact Information</h4>
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.email}</p>
+                        </div>
+                        {viewingLead.person_mobile && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Mobile</label>
+                            <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.person_mobile}</p>
+                          </div>
+                        )}
+                        {viewingLead.profile_link && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Profile Link</label>
+                            <a href={viewingLead.profile_link} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 block">
+                              {viewingLead.profile_link}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Additional Emails */}
+                      {viewingLead.additional_emails && viewingLead.additional_emails.length > 0 && (
+                        <div className="mt-4">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Additional Emails</label>
+                          <div className="mt-2 space-y-2">
+                            {viewingLead.additional_emails.map((email, index) => (
+                              <div key={index} className="flex items-center space-x-2 text-sm">
+                                <span className="text-gray-900 dark:text-white">{email.email}</span>
+                                <span className="text-gray-500 dark:text-gray-400">({email.designation || 'N/A'})</span>
+                                {email.is_primary && (
+                                  <span className="px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">
+                                    Primary
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Company Information */}
+                    <div>
+                      <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Company Information</h4>
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Company Name</label>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.company_name}</p>
+                        </div>
+                        {viewingLead.company_link && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Company Website</label>
+                            <a href={viewingLead.company_link} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 block">
+                              {viewingLead.company_link}
+                            </a>
+                          </div>
+                        )}
+                        {viewingLead.job_title && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Job Title</label>
+                            <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.job_title}</p>
+                          </div>
+                        )}
+                        {viewingLead.job_link && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Job Link</label>
+                            <a href={viewingLead.job_link} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 block">
+                              {viewingLead.job_link}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Additional Information */}
+                    <div>
+                      <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Additional Information</h4>
+                      <div className="space-y-2">
+                        {viewingLead.source && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Source</label>
+                            <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.source}</p>
+                          </div>
+                        )}
+                        {viewingLead.notes && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                            <p className="text-sm text-gray-900 dark:text-white mt-1 whitespace-pre-wrap">{viewingLead.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* System Information */}
+                    <div>
+                      <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">System Information</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Assigned To</label>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.assigned_to.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{viewingLead.assigned_to.email}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Created By</label>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{viewingLead.created_by.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{viewingLead.created_by.email}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Created Date</label>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{formatDate(viewingLead.created_at)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </DashboardLayout>
     </ProtectedRoute>
