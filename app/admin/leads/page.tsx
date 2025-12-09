@@ -90,6 +90,7 @@ export default function AdminLeads() {
   });
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -243,96 +244,141 @@ export default function AdminLeads() {
     setViewingLead(null);
   };
 
-  const exportToCSV = () => {
-    const headers = [
-      "First Name",
-      "Last Name",
-      "Email",
-      "Email Type",
-      "Designation",
-      "Profile Link",
-      "Company",
-      "Company Link",
-      "Job Title",
-      "Job Link",
-      "Location",
-      "Mobile",
-      "Source",
-      "Notes",
-      "Assigned To",
-      "Assigned To Email",
-      "Created By",
-      "Created By Email",
-      "Created Date",
-    ];
+  const exportToCSV = async () => {
+    setIsExporting(true);
+    try {
+      // Fetch all leads matching current filters by paginating through all pages
+      const allLeads: Lead[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+      const limit = 1000; // Fetch 1000 leads per page for efficiency
 
-    const csvData: string[][] = [];
-
-    leads.forEach((lead) => {
-      csvData.push([
-        lead.first_name,
-        lead.last_name,
-        lead.email,
-        "Primary",
-        lead.designation,
-        lead.profile_link || "",
-        lead.company_name,
-        lead.company_link || "",
-        lead.job_title || "",
-        lead.job_link || "",
-        lead.location || "",
-        lead.person_mobile || "",
-        lead.source || "",
-        lead.notes || "",
-        lead.assigned_to.name,
-        lead.assigned_to.email,
-        lead.created_by.name,
-        lead.created_by.email,
-        formatDate(lead.created_at),
-      ]);
-
-      // Add additional email rows
-      if (lead.additional_emails && lead.additional_emails.length > 0) {
-        lead.additional_emails.forEach((additionalEmail) => {
-          csvData.push([
-            additionalEmail.first_name,
-            additionalEmail.last_name,
-            additionalEmail.email,
-            additionalEmail.is_primary ? "Primary (Additional)" : "Additional",
-            additionalEmail.designation || "",
-            "", // Profile link not available for additional emails
-            lead.company_name,
-            lead.company_link || "",
-            lead.job_title || "",
-            lead.job_link || "",
-            lead.location || "",
-            lead.person_mobile || "",
-            lead.source || "",
-            lead.notes || "",
-            lead.assigned_to.name,
-            lead.assigned_to.email,
-            lead.created_by.name,
-            lead.created_by.email,
-            formatDate(lead.created_at),
-          ]);
+      while (hasMore) {
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: limit.toString(),
+          role: "admin",
+          ...(searchTerm && { search: searchTerm }),
+          ...(companyFilter && { company: companyFilter }),
+          ...(locationFilter && { location: locationFilter }),
+          ...(designationFilter && { designation: designationFilter }),
+          ...(assignedToFilter && { assignedTo: assignedToFilter }),
+          ...(sourceFilter && { source: sourceFilter }),
+          ...(dateFromFilter && { dateFrom: dateFromFilter }),
+          ...(dateToFilter && { dateTo: dateToFilter }),
+          sortBy,
+          sortOrder,
         });
+
+        const response = await fetch(`/api/leads?${params}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch leads for export");
+        }
+
+        const data = await response.json();
+        allLeads.push(...data.leads);
+
+        // Check if there are more pages
+        hasMore = data.pagination.hasNext;
+        currentPage++;
       }
-    });
 
-    const csvContent = [
-      headers.join(","),
-      ...csvData.map((row) =>
-        row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")
-      ),
-    ].join("\n");
+      const headers = [
+        "First Name",
+        "Last Name",
+        "Email",
+        "Email Type",
+        "Designation",
+        "Profile Link",
+        "Company",
+        "Company Link",
+        "Job Title",
+        "Job Link",
+        "Location",
+        "Mobile",
+        "Source",
+        "Notes",
+        "Assigned To",
+        "Assigned To Email",
+        "Created By",
+        "Created By Email",
+        "Created Date",
+      ];
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `leads-export-${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+      const csvData: string[][] = [];
+
+      allLeads.forEach((lead) => {
+        csvData.push([
+          lead.first_name,
+          lead.last_name,
+          lead.email,
+          "Primary",
+          lead.designation,
+          lead.profile_link || "",
+          lead.company_name,
+          lead.company_link || "",
+          lead.job_title || "",
+          lead.job_link || "",
+          lead.location || "",
+          lead.person_mobile || "",
+          lead.source || "",
+          lead.notes || "",
+          lead.assigned_to.name,
+          lead.assigned_to.email,
+          lead.created_by.name,
+          lead.created_by.email,
+          formatDate(lead.created_at),
+        ]);
+
+        // Add additional email rows
+        if (lead.additional_emails && lead.additional_emails.length > 0) {
+          lead.additional_emails.forEach((additionalEmail) => {
+            csvData.push([
+              additionalEmail.first_name,
+              additionalEmail.last_name,
+              additionalEmail.email,
+              additionalEmail.is_primary ? "Primary (Additional)" : "Additional",
+              additionalEmail.designation || "",
+              "", // Profile link not available for additional emails
+              lead.company_name,
+              lead.company_link || "",
+              lead.job_title || "",
+              lead.job_link || "",
+              lead.location || "",
+              lead.person_mobile || "",
+              lead.source || "",
+              lead.notes || "",
+              lead.assigned_to.name,
+              lead.assigned_to.email,
+              lead.created_by.name,
+              lead.created_by.email,
+              formatDate(lead.created_at),
+            ]);
+          });
+        }
+      });
+
+      const csvContent = [
+        headers.join(","),
+        ...csvData.map((row) =>
+          row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `leads-export-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error exporting leads:", error);
+      alert("Failed to export leads. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -352,22 +398,32 @@ export default function AdminLeads() {
               </div>
               <button
                 onClick={exportToCSV}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                disabled={isExporting}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <span>Export CSV</span>
+                {isExporting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Exporting...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <span>Export CSV</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

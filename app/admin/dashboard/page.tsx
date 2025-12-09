@@ -40,33 +40,83 @@ export default function AdminDashboard() {
     fetchDashboardData();
   }, []);
 
+  // Helper function to fetch all pages of data
+  const fetchAllUsers = async () => {
+    const allUsers: any[] = [];
+    let currentPage = 1;
+    let hasMore = true;
+    const limit = 100; // Fetch 100 at a time for efficiency
+
+    while (hasMore) {
+      const response = await fetch(`/api/admin/users?page=${currentPage}&limit=${limit}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      const data = await response.json();
+      
+      if (data.users && data.users.length > 0) {
+        allUsers.push(...data.users);
+        hasMore = data.pagination?.hasNext || false;
+        currentPage++;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    return allUsers;
+  };
+
+  // Helper function to fetch all pages of leads
+  const fetchAllLeads = async () => {
+    const allLeads: any[] = [];
+    let currentPage = 1;
+    let hasMore = true;
+    const limit = 100; // Fetch 100 at a time for efficiency
+
+    while (hasMore) {
+      const response = await fetch(`/api/leads?role=admin&page=${currentPage}&limit=${limit}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch leads');
+      }
+      const data = await response.json();
+      
+      if (data.leads && data.leads.length > 0) {
+        allLeads.push(...data.leads);
+        hasMore = data.pagination?.hasNext || false;
+        currentPage++;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    return allLeads;
+  };
+
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
       setError('');
       
-      // Fetch users data
-      const usersResponse = await fetch('/api/admin/users?limit=1000');
-      const usersData = await usersResponse.json();
+      // Fetch all users data (all pages)
+      const allUsers = await fetchAllUsers();
       
-      // Fetch leads data
-      const leadsResponse = await fetch('/api/leads?role=admin&limit=1000');
-      const leadsData = await leadsResponse.json();
+      // Fetch all leads data (all pages)
+      const allLeads = await fetchAllLeads();
       
       // Calculate stats
-      const totalUsers = usersData.pagination?.totalUsers || usersData.users?.length || 0;
-      const totalLeads = leadsData.pagination?.totalLeads || leadsData.leads?.length || 0;
-      const activeUsers = usersData.users?.filter((u: any) => u.isActive)?.length || 0;
+      const totalUsers = allUsers.length;
+      const totalLeads = allLeads.length;
+      const activeUsers = allUsers.filter((u: any) => u.isActive)?.length || 0;
       
       // Calculate new leads this week
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      const newLeadsThisWeek = leadsData.leads?.filter((lead: any) => 
+      const newLeadsThisWeek = allLeads.filter((lead: any) => 
         new Date(lead.created_at) >= oneWeekAgo
       )?.length || 0;
       
       // Calculate unique companies
-      const uniqueCompanies = new Set(leadsData.leads?.map((lead: any) => lead.company_name) || []);
+      const uniqueCompanies = new Set(allLeads.map((lead: any) => lead.company_name));
 
       const dashboardStats = {
         totalUsers,
@@ -80,20 +130,26 @@ export default function AdminDashboard() {
       // Generate recent activity
       const activity: RecentActivity[] = [];
       
-      // Add recent user registrations
-      const recentUsers = usersData.users?.slice(0, 3) || [];
+      // Sort users by creation date (newest first) and take top 3
+      const sortedUsers = [...allUsers].sort((a: any, b: any) => 
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
+      const recentUsers = sortedUsers.slice(0, 3);
       recentUsers.forEach((user: any) => {
         activity.push({
-          id: user.id,
+          id: user._id || user.id,
           type: 'user_registered',
           message: `New user registered: ${user.name}`,
-          time: user.createdAt,
+          time: user.createdAt || new Date().toISOString(),
           user: user.name,
         });
       });
 
-      // Add recent leads
-      const recentLeads = leadsData.leads?.slice(0, 2) || [];
+      // Sort leads by creation date (newest first) and take top 2
+      const sortedLeads = [...allLeads].sort((a: any, b: any) => 
+        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      );
+      const recentLeads = sortedLeads.slice(0, 2);
       recentLeads.forEach((lead: any) => {
         activity.push({
           id: lead._id,

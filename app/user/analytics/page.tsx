@@ -27,7 +27,7 @@ export default function Analytics() {
     topCompanies: [],
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('30'); // 7, 30, 90, 365
+  const [timeRange, setTimeRange] = useState('30'); // 1, 7, 30, 90, 365
 
   useEffect(() => {
     if (user?.id) {
@@ -44,22 +44,35 @@ export default function Analytics() {
     try {
       setIsLoading(true);
 
-      // In a real app, you would have an analytics API endpoint
-      // For now, we'll fetch leads and calculate analytics on the client
-      const params = new URLSearchParams({
-        userId: user.id,
-        role: user.role || 'user',
-        limit: '1000',
-      });
+      // Fetch all leads by paginating through all pages
+      const allLeads: any[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+      const limit = 1000; // Fetch 1000 leads per page for efficiency
 
-      const response = await fetch(`/api/leads?${params}`);
+      while (hasMore) {
+        const params = new URLSearchParams({
+          userId: user.id,
+          role: user.role || 'user',
+          page: currentPage.toString(),
+          limit: limit.toString(),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch analytics data');
+        const response = await fetch(`/api/leads?${params}`);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch analytics data');
+        }
+
+        const data = await response.json();
+        allLeads.push(...data.leads);
+
+        // Check if there are more pages
+        hasMore = data.pagination.hasNext;
+        currentPage++;
       }
 
-      const data = await response.json();
-      calculateAnalytics(data.leads);
+      calculateAnalytics(allLeads);
     } catch (error) {
       console.error('Error fetching analytics:', error);
     } finally {
@@ -166,6 +179,7 @@ export default function Analytics() {
                 onChange={(e) => setTimeRange(e.target.value)}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
               >
+                <option value="1">Last 1 day</option>
                 <option value="7">Last 7 days</option>
                 <option value="30">Last 30 days</option>
                 <option value="90">Last 90 days</option>
