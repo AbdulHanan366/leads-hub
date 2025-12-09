@@ -21,12 +21,16 @@ interface Lead {
   source: string;
   notes: string;
   additional_emails: Array<{
+    first_name: string;
+    last_name: string;
     email: string;
     designation: string;
+    profile_link: string;
     is_primary: boolean;
   }>;
   created_at: string;
   assigned_to: {
+    _id?: string;
     name: string;
     email: string;
   };
@@ -35,6 +39,7 @@ interface Lead {
     email: string;
   };
 }
+
 
 interface PaginationInfo {
   currentPage: number;
@@ -186,7 +191,11 @@ export default function ViewLeads() {
   };
 
   const openEditModal = (lead: Lead) => {
-    setEditingLead(lead);
+    const leadCopy = {
+      ...lead,
+      additional_emails: lead.additional_emails ? [...lead.additional_emails] : [],
+    };
+    setEditingLead(leadCopy);
     setShowEditModal(true);
   };
 
@@ -211,16 +220,26 @@ export default function ViewLeads() {
 
     setLoadingAction('editing');
     try {
+      const { assigned_to, created_by, created_at, ...updateData } = editingLead;
+      
+      if (updateData.additional_emails) {
+        updateData.additional_emails = updateData.additional_emails.map((email: any) => {
+          const { _id, ...emailData } = email;
+          return emailData;
+        });
+      }
+
       const response = await fetch(`/api/leads/${editingLead._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editingLead),
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update lead');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update lead');
       }
 
       // Refresh leads list
@@ -228,10 +247,50 @@ export default function ViewLeads() {
       closeEditModal();
     } catch (error) {
       console.error('Error updating lead:', error);
-      alert('Failed to update lead. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to update lead. Please try again.');
     } finally {
       setLoadingAction(null);
     }
+  };
+
+  const addAdditionalEmail = () => {
+    if (!editingLead) return;
+    setEditingLead({
+      ...editingLead,
+      additional_emails: [
+        ...(editingLead.additional_emails || []),
+        {
+          first_name: '',
+          last_name: '',
+          email: '',
+          designation: '',
+          profile_link: '',
+          is_primary: false,
+        },
+      ],
+    });
+  };
+
+  const removeAdditionalEmail = (index: number) => {
+    if (!editingLead) return;
+    setEditingLead({
+      ...editingLead,
+      additional_emails: editingLead.additional_emails.filter((_, i) => i !== index),
+    });
+  };
+
+  const updateAdditionalEmail = (
+    index: number,
+    field: keyof Lead['additional_emails'][0],
+    value: string | boolean
+  ) => {
+    if (!editingLead) return;
+    setEditingLead({
+      ...editingLead,
+      additional_emails: editingLead.additional_emails.map((email, i) =>
+        i === index ? { ...email, [field]: value } : email
+      ),
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -573,16 +632,39 @@ export default function ViewLeads() {
                     {viewingLead.additional_emails && viewingLead.additional_emails.length > 0 && (
                       <div className="mt-4">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Additional Emails</label>
-                        <div className="mt-2 space-y-2">
+                        <div className="mt-2 space-y-3">
                           {viewingLead.additional_emails.map((email, index) => (
-                            <div key={index} className="flex items-center space-x-2 text-sm">
-                              <span className="text-gray-900 dark:text-white">{email.email}</span>
-                              <span className="text-gray-500 dark:text-gray-400">({email.designation})</span>
-                              {email.is_primary && (
-                                <span className="px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">
-                                  Primary
-                                </span>
-                              )}
+                            <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                    {email.first_name} {email.last_name}
+                                  </div>
+                                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    {email.email}
+                                  </div>
+                                  {email.designation && (
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                      {email.designation}
+                                    </div>
+                                  )}
+                                  {email.profile_link && (
+                                    <a
+                                      href={email.profile_link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 block"
+                                    >
+                                      View Profile
+                                    </a>
+                                  )}
+                                </div>
+                                {email.is_primary && (
+                                  <span className="px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">
+                                    Primary
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -691,7 +773,7 @@ export default function ViewLeads() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          First Name
+                          First Name *
                         </label>
                         <input
                           type="text"
@@ -703,7 +785,7 @@ export default function ViewLeads() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Last Name
+                          Last Name *
                         </label>
                         <input
                           type="text"
@@ -715,7 +797,7 @@ export default function ViewLeads() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Designation
+                          Designation *
                         </label>
                         <input
                           type="text"
@@ -742,7 +824,7 @@ export default function ViewLeads() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Email
+                          Email *
                         </label>
                         <input
                           type="email"
@@ -776,11 +858,125 @@ export default function ViewLeads() {
                       </div>
                     </div>
 
+                    {/* Additional Emails */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-md font-medium text-gray-900 dark:text-white">
+                          Additional Emails
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={addAdditionalEmail}
+                          className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300"
+                        >
+                          + Add Email
+                        </button>
+                      </div>
+
+                      {editingLead.additional_emails && editingLead.additional_emails.length > 0 && (
+                        <div className="space-y-4">
+                          {editingLead.additional_emails.map((email, index) => (
+                            <div
+                              key={index}
+                              className="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
+                            >
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    First Name *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={email.first_name}
+                                    onChange={(e) => updateAdditionalEmail(index, 'first_name', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Last Name *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={email.last_name}
+                                    onChange={(e) => updateAdditionalEmail(index, 'last_name', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                    required
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Email *
+                                  </label>
+                                  <input
+                                    type="email"
+                                    value={email.email}
+                                    onChange={(e) => updateAdditionalEmail(index, 'email', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Designation
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={email.designation || ''}
+                                    onChange={(e) => updateAdditionalEmail(index, 'designation', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Profile Link
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={email.profile_link || ''}
+                                    onChange={(e) => updateAdditionalEmail(index, 'profile_link', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                  />
+                                </div>
+                                <div className="flex items-end space-x-4">
+                                  <div className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={email.is_primary}
+                                      onChange={(e) => updateAdditionalEmail(index, 'is_primary', e.target.checked)}
+                                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                    />
+                                    <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                      Primary
+                                    </label>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeAdditionalEmail(index)}
+                                    className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     {/* Company Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Company Name
+                          Company Name *
                         </label>
                         <input
                           type="text"

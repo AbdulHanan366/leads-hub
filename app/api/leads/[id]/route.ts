@@ -6,7 +6,8 @@ import Lead from '@/models/Lead';
 export async function GET(request: NextRequest, context: any) {
   try {
     await dbConnect();
-    const { id } = context.params;
+    const params = await context.params;
+    const { id } = params;
 
     const lead = await Lead.findById(id)
       .populate('assigned_to', 'name email')
@@ -26,7 +27,8 @@ export async function GET(request: NextRequest, context: any) {
 export async function PUT(request: NextRequest, context: any) {
   try {
     await dbConnect();
-    const { id } = context.params;
+    const params = await context.params;
+    const { id } = params;
 
     const body = await request.json();
     const {
@@ -44,6 +46,7 @@ export async function PUT(request: NextRequest, context: any) {
       additional_emails,
       source,
       notes,
+      assigned_to,
     } = body;
 
     const lead = await Lead.findById(id);
@@ -66,6 +69,7 @@ export async function PUT(request: NextRequest, context: any) {
     if (additional_emails) lead.additional_emails = additional_emails;
     if (source !== undefined) lead.source = source;
     if (notes !== undefined) lead.notes = notes;
+    if (assigned_to) lead.assigned_to = assigned_to;
 
     await lead.save();
 
@@ -83,7 +87,8 @@ export async function PUT(request: NextRequest, context: any) {
 export async function DELETE(request: NextRequest, context: any) {
   try {
     await dbConnect();
-    const { id } = context.params;
+    const params = await context.params;
+    const { id } = params;
 
     const lead = await Lead.findById(id);
     if (!lead) {
