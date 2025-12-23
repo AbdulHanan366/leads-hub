@@ -82,9 +82,20 @@ export async function GET(request: NextRequest) {
         };
       }
 
+      // Type assertion: findOne returns a single document, not an array
+      // Ensure we're working with a single document object
+      const companyDoc = Array.isArray(existingCompany) ? existingCompany[0] : existingCompany;
+      if (!companyDoc || !('company_name' in companyDoc)) {
+        return {
+          exists: false,
+          company: null,
+          leads: []
+        };
+      }
+
       // Fetch all leads for this company with populated user information
       // Use the found company name for consistency
-      const companyNameForQuery = existingCompany.company_name;
+      const companyNameForQuery = companyDoc.company_name;
       
       const leads = await Lead.find({
         company_name: companyNameForQuery
@@ -99,7 +110,7 @@ export async function GET(request: NextRequest) {
 
       return {
         exists: true,
-        company: existingCompany,
+        company: companyDoc,
         leads: leads
       };
     }, 3, 200); // 3 retries with initial 200ms delay
