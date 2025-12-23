@@ -44,6 +44,7 @@ interface PaginationInfo {
   currentPage: number;
   totalPages: number;
   totalLeads: number;
+  totalEmails?: number;
   hasNext: boolean;
   hasPrev: boolean;
 }
@@ -755,36 +756,52 @@ export default function AdminLeads() {
                 )}
 
                 {/* Pagination */}
-                {pagination.totalPages > 1 && leads.length > 0 && (
+                {leads.length > 0 && (
                   <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-600">
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-gray-700 dark:text-gray-300">
-                        Showing {leads.length} of {pagination.totalLeads} leads
+                        <div>
+                          Showing {leads.length} of {pagination.totalLeads} leads
+                        </div>
+                        {(() => {
+                          // Calculate emails on current page
+                          const currentPageEmails = leads.reduce((total, lead) => {
+                            return total + 1 + (lead.additional_emails?.length || 0);
+                          }, 0);
+                          const totalEmails = pagination.totalEmails || pagination.totalLeads;
+                          return (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              ({currentPageEmails} of {totalEmails} emails)
+                            </div>
+                          );
+                        })()}
                       </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() =>
-                            handlePageChange(pagination.currentPage - 1)
-                          }
-                          disabled={!pagination.hasPrev}
-                          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-                        >
-                          Previous
-                        </button>
-                        <span className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
-                          Page {pagination.currentPage} of{" "}
-                          {pagination.totalPages}
-                        </span>
-                        <button
-                          onClick={() =>
-                            handlePageChange(pagination.currentPage + 1)
-                          }
-                          disabled={!pagination.hasNext}
-                          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-                        >
-                          Next
-                        </button>
-                      </div>
+                      {pagination.totalPages > 1 && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() =>
+                              handlePageChange(pagination.currentPage - 1)
+                            }
+                            disabled={!pagination.hasPrev}
+                            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            Previous
+                          </button>
+                          <span className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+                            Page {pagination.currentPage} of{" "}
+                            {pagination.totalPages}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handlePageChange(pagination.currentPage + 1)
+                            }
+                            disabled={!pagination.hasNext}
+                            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

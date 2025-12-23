@@ -245,17 +245,61 @@ export default function CreateLead() {
       return;
     }
 
+    // Retry function with exponential backoff for frontend
+    const fetchWithRetry = async (
+      url: string,
+      maxRetries: number = 3,
+      initialDelay: number = 300
+    ): Promise<Response> => {
+      let lastError: Error | null = null;
+
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(url);
+          
+          // If response is ok, return it
+          if (response.ok) {
+            return response;
+          }
+          
+          // If it's a client error (4xx), don't retry
+          if (response.status >= 400 && response.status < 500) {
+            return response;
+          }
+          
+          // For server errors (5xx), throw to trigger retry
+          throw new Error(`Server error: ${response.status}`);
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+          
+          // Don't retry on the last attempt
+          if (attempt === maxRetries) {
+            throw lastError;
+          }
+          
+          // Calculate delay with exponential backoff
+          const delay = initialDelay * Math.pow(2, attempt);
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+      
+      throw lastError || new Error('Unknown error occurred');
+    };
+
     try {
       setCompanyCheckLoading(true);
-      const response = await fetch(
-        `/api/leads/company?company_name=${encodeURIComponent(
-          formData.company_name.trim()
-        )}`
+      setErrors({}); // Clear previous errors
+      
+      const normalizedCompanyName = formData.company_name.trim();
+      const response = await fetchWithRetry(
+        `/api/leads/company?company_name=${encodeURIComponent(normalizedCompanyName)}`
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to check company");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to check company (${response.status})`);
       }
 
       const data = await response.json();
@@ -277,10 +321,14 @@ export default function CreateLead() {
       }
     } catch (error) {
       setCompanyExists(false);
+      setCompanyInfo(null);
+      setCompanyLeads([]);
       console.error("Error checking company:", error);
       setErrors({
         submit:
-          error instanceof Error ? error.message : "Failed to check company",
+          error instanceof Error 
+            ? error.message 
+            : "Failed to check company. Please try again.",
       });
     } finally {
       setCompanyCheckLoading(false);

@@ -163,6 +163,29 @@ export async function GET(request: NextRequest) {
     const totalLeads = await Lead.countDocuments(filter);
     const totalPages = Math.ceil(totalLeads / limit);
 
+    // Calculate total emails (primary + additional) across all filtered leads
+    const totalEmailsResult = await Lead.aggregate([
+      { $match: filter },
+      {
+        $project: {
+          emailCount: {
+            $add: [
+              1, // Primary email
+              { $size: { $ifNull: ['$additional_emails', []] } } // Additional emails
+            ]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalEmails: { $sum: '$emailCount' }
+        }
+      }
+    ]);
+
+    const totalEmails = totalEmailsResult.length > 0 ? totalEmailsResult[0].totalEmails : totalLeads;
+
     return NextResponse.json({
       leads,
       stats: {
@@ -172,6 +195,7 @@ export async function GET(request: NextRequest) {
         currentPage: page,
         totalPages,
         totalLeads,
+        totalEmails,
         hasNext: page < totalPages,
         hasPrev: page > 1,
       }
