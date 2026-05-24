@@ -56,6 +56,12 @@ export default function UsersManagement() {
         role: 'user' as 'admin' | 'user',
     });
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordChangeUser, setPasswordChangeUser] = useState<User | null>(null);
+    const [passwordFormData, setPasswordFormData] = useState({
+        password: '',
+        confirmPassword: '',
+    });
 
     useEffect(() => {
         fetchUsers();
@@ -233,6 +239,57 @@ export default function UsersManagement() {
         }
     };
 
+    const openPasswordModal = (user: User) => {
+        setPasswordChangeUser(user);
+        setPasswordFormData({ password: '', confirmPassword: '' });
+        setShowPasswordModal(true);
+    };
+
+    const closePasswordModal = () => {
+        setShowPasswordModal(false);
+        setPasswordChangeUser(null);
+        setPasswordFormData({ password: '', confirmPassword: '' });
+    };
+
+    const handlePasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!passwordChangeUser) return;
+
+        if (passwordFormData.password !== passwordFormData.confirmPassword) {
+            alert('Passwords do not match.');
+            return;
+        }
+
+        if (passwordFormData.password.length < 6) {
+            alert('Password must be at least 6 characters.');
+            return;
+        }
+
+        setLoadingAction(`password-${passwordChangeUser._id}`);
+        try {
+            const response = await fetch(`/api/admin/users/${passwordChangeUser._id}/password`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ password: passwordFormData.password }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to change password');
+            }
+
+            closePasswordModal();
+            alert(`Password updated for ${passwordChangeUser.name}.`);
+        } catch (error) {
+            console.error('Error changing password:', error);
+            alert(error instanceof Error ? error.message : 'Failed to change password. Please try again.');
+        } finally {
+            setLoadingAction(null);
+        }
+    };
+
     // Toggle User Status
     const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
         setLoadingAction(`toggling-${userId}`);
@@ -404,6 +461,12 @@ export default function UsersManagement() {
                                                             Edit
                                                         </button>
                                                         <button
+                                                            onClick={() => openPasswordModal(user)}
+                                                            className="text-amber-600 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 transition-colors"
+                                                        >
+                                                            Change Password
+                                                        </button>
+                                                        <button
                                                             onClick={() => handleDeleteUser(user._id, user.name)}
                                                             disabled={loadingAction === `deleting-${user._id}`}
                                                             className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors disabled:opacity-50"
@@ -544,6 +607,66 @@ export default function UsersManagement() {
                                         className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                                     >
                                         {loadingAction === 'editing' ? 'Updating...' : 'Update User'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* Change Password Modal */}
+                {showPasswordModal && passwordChangeUser && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                                Change Password
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                Set a new password for {passwordChangeUser.name}
+                            </p>
+                            <form onSubmit={handlePasswordChange}>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            New Password
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={passwordFormData.password}
+                                            onChange={(e) => setPasswordFormData(prev => ({ ...prev, password: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                            required
+                                            minLength={6}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Confirm Password
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={passwordFormData.confirmPassword}
+                                            onChange={(e) => setPasswordFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                                            required
+                                            minLength={6}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex justify-end space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={closePasswordModal}
+                                        className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={loadingAction === `password-${passwordChangeUser._id}`}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                                    >
+                                        {loadingAction === `password-${passwordChangeUser._id}` ? 'Updating...' : 'Update Password'}
                                     </button>
                                 </div>
                             </form>
