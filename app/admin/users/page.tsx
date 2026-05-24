@@ -103,7 +103,6 @@ export default function UsersManagement() {
         setPagination(prev => ({ ...prev, currentPage: newPage }));
     };
 
-    // Edit User Functions
     const openEditModal = (user: User) => {
         setEditingUser(user);
         setEditFormData({
@@ -144,7 +143,6 @@ export default function UsersManagement() {
                 throw new Error('Failed to update user');
             }
 
-            // Update local state
             setUsers(prev => prev.map(user =>
                 user._id === editingUser._id ? { ...user, ...editFormData } : user
             ));
@@ -158,7 +156,6 @@ export default function UsersManagement() {
         }
     };
 
-    // Add User Functions
     const openAddModal = () => {
         setNewUserData({
             name: '',
@@ -197,7 +194,6 @@ export default function UsersManagement() {
                 throw new Error(errorData.error || 'Failed to create user');
             }
 
-            // Refresh users list
             fetchUsers();
             closeAddModal();
         } catch (error) {
@@ -208,7 +204,6 @@ export default function UsersManagement() {
         }
     };
 
-    // Delete User Function
     const handleDeleteUser = async (userId: string, userName: string) => {
         if (!confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
             return;
@@ -224,10 +219,8 @@ export default function UsersManagement() {
                 throw new Error('Failed to delete user');
             }
 
-            // Remove user from local state
             setUsers(prev => prev.filter(user => user._id !== userId));
 
-            // If this was the last user on the page, go to previous page
             if (users.length === 1 && pagination.currentPage > 1) {
                 setPagination(prev => ({ ...prev, currentPage: prev.currentPage - 1 }));
             }
@@ -290,7 +283,6 @@ export default function UsersManagement() {
         }
     };
 
-    // Toggle User Status
     const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
         setLoadingAction(`toggling-${userId}`);
         try {
@@ -306,7 +298,6 @@ export default function UsersManagement() {
                 throw new Error('Failed to update user status');
             }
 
-            // Update local state
             setUsers(prev => prev.map(user =>
                 user._id === userId ? { ...user, isActive: !currentStatus } : user
             ));
@@ -330,7 +321,6 @@ export default function UsersManagement() {
         <ProtectedRoute requiredRole="admin">
             <DashboardLayout>
                 <div className="p-6">
-                    {/* Header */}
                     <div className="mb-8">
                         <div className="flex justify-between items-center">
                             <div>
@@ -353,7 +343,6 @@ export default function UsersManagement() {
                         </div>
                     </div>
 
-                    {/* Filters and Search */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
                         <div className="flex flex-col md:flex-row gap-4">
                             <form onSubmit={handleSearch} className="flex w-full flex-wrap justify-center space-x-3 space-y-2 items-center">
@@ -387,7 +376,6 @@ export default function UsersManagement() {
                         </div>
                     </div>
 
-                    {/* Users Table */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                         {isLoading ? (
                             <div className="p-8 text-center">
@@ -480,7 +468,6 @@ export default function UsersManagement() {
                                     </table>
                                 </div>
 
-                                {/* Empty State */}
                                 {users.length === 0 && !isLoading && (
                                     <div className="text-center py-8">
                                         <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -501,7 +488,6 @@ export default function UsersManagement() {
                                     </div>
                                 )}
 
-                                {/* Pagination */}
                                 {pagination.totalPages > 1 && users.length > 0 && (
                                     <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-600">
                                         <div className="flex items-center justify-between">
@@ -535,7 +521,6 @@ export default function UsersManagement() {
                     </div>
                 </div>
 
-                {/* Edit User Modal */}
                 {showEditModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
@@ -614,7 +599,6 @@ export default function UsersManagement() {
                     </div>
                 )}
 
-                {/* Change Password Modal */}
                 {showPasswordModal && passwordChangeUser && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
@@ -674,7 +658,6 @@ export default function UsersManagement() {
                     </div>
                 )}
 
-                {/* Add User Modal */}
                 {showAddModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
