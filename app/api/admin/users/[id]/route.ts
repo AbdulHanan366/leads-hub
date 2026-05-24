@@ -5,7 +5,7 @@ import User from '@/models/User';
 export async function GET(request: NextRequest, context: any) {
   try {
     await dbConnect();
-    const { id } = context.params;
+    const { id } = await context.params;
 
     const user = await User.findById(id).select('-password');
     if (!user) {
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, context: any) {
 export async function PUT(request: NextRequest, context: any) {
   try {
     await dbConnect();
-    const { id } = context.params;
+    const { id } = await context.params;
 
     const body = await request.json();
     const { name, email, role, isActive } = body;
@@ -58,7 +58,7 @@ export async function PUT(request: NextRequest, context: any) {
 export async function DELETE(request: NextRequest, context: any) {
   try {
     await dbConnect();
-    const { id } = context.params;
+    const { id } = await context.params;
 
     const user = await User.findById(id);
     if (!user) {
